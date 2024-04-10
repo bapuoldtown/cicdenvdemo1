@@ -1,0 +1,48 @@
+name: Git Actions to perform pytest on push of a pyton script
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  execute:
+    runs-on: ubuntu-20.04
+    defaults:
+      run:
+        working-directory: .
+    steps:
+      - name: checkout the repository
+        uses: actions/checkout@v3
+
+      - name: setup python
+        uses: actions/setup-python@v3
+        with:
+          python-version: 3.11
+
+      - name: execute python-env-var-parser
+        run: |
+          output=$(python codes/parser.py)
+          output="${output//'%'/'%25'}"
+          output="${output//$'\n'/'%0A'}"
+          output="${output//$'\r'/'%0D'}"
+          echo "::set-output name=log::$output"
+        id: step-execute-parser
+
+      - name: print parser output
+        run: echo "${{ steps.step-execute-parser.outputs.log }}"
+
+      - name: check environment variable status
+        run: |
+          if [ $ENV_VAR == 1 ]
+          then
+            echo "Environmental variable is set via Python script and its value is $ENV_VAR"
+          else
+            echo "Environmental variable is not set. Exiting..."
+            exit 1
+          fi
+          
+
